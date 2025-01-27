@@ -11,40 +11,87 @@
 // Alternatively, this file may be used under the terms of Open CASCADE
 // commercial license or contractual agreement.
 
-
 #include <Transfer_ActorOfTransientProcess.hxx>
 #include <Transfer_Binder.hxx>
 #include <Transfer_ProcessForTransient.hxx>
 #include <Transfer_SimpleBinderOfTransient.hxx>
 #include <Transfer_TransientProcess.hxx>
+#include <XSAlgo_ShapeProcessor.hxx>
 
-IMPLEMENT_STANDARD_RTTIEXT(Transfer_ActorOfTransientProcess,Transfer_ActorOfProcessForTransient)
+IMPLEMENT_STANDARD_RTTIEXT(Transfer_ActorOfTransientProcess, Transfer_ActorOfProcessForTransient)
 
-Transfer_ActorOfTransientProcess::Transfer_ActorOfTransientProcess ()    {  }
+Transfer_ActorOfTransientProcess::Transfer_ActorOfTransientProcess() {}
 
-Handle(Transfer_Binder)  Transfer_ActorOfTransientProcess::Transfer
-  (const Handle(Standard_Transient)& start,
-   const Handle(Transfer_TransientProcess)& TP,
-   const Message_ProgressRange& theProgress)
+//=============================================================================
+
+Handle(Transfer_Binder) Transfer_ActorOfTransientProcess::Transfer(
+  const Handle(Standard_Transient)&        start,
+  const Handle(Transfer_TransientProcess)& TP,
+  const Message_ProgressRange&             theProgress)
 {
-  Handle(Standard_Transient) res = TransferTransient (start,TP, theProgress);
-  if (res.IsNull()) return NullResult();
-  return TransientResult (res);
+  Handle(Standard_Transient) res = TransferTransient(start, TP, theProgress);
+  if (res.IsNull())
+    return NullResult();
+  return TransientResult(res);
 }
 
-Handle(Transfer_Binder)  Transfer_ActorOfTransientProcess::Transferring
-  (const Handle(Standard_Transient)& ent,
-   const Handle(Transfer_ProcessForTransient)& TP,
-   const Message_ProgressRange& theProgress)
+//=============================================================================
+
+Handle(Transfer_Binder) Transfer_ActorOfTransientProcess::Transferring(
+  const Handle(Standard_Transient)&           ent,
+  const Handle(Transfer_ProcessForTransient)& TP,
+  const Message_ProgressRange&                theProgress)
 {
-  return Transfer(ent,Handle(Transfer_TransientProcess)::DownCast(TP), theProgress);
+  return Transfer(ent, Handle(Transfer_TransientProcess)::DownCast(TP), theProgress);
 }
 
-Handle(Standard_Transient)  Transfer_ActorOfTransientProcess::TransferTransient
-  (const Handle(Standard_Transient)& /*ent*/,
-   const Handle(Transfer_TransientProcess)& /*TP*/,
-   const Message_ProgressRange& )
+//=============================================================================
+
+Handle(Standard_Transient) Transfer_ActorOfTransientProcess::TransferTransient(
+  const Handle(Standard_Transient)& /*ent*/,
+  const Handle(Transfer_TransientProcess)& /*TP*/,
+  const Message_ProgressRange&)
 {
   Handle(Standard_Transient) nulres;
   return nulres;
+}
+
+//=============================================================================
+
+void Transfer_ActorOfTransientProcess::SetShapeFixParameters(const ParameterMap& theParameters)
+{
+  myShapeProcParams = theParameters;
+}
+
+//=============================================================================
+
+void Transfer_ActorOfTransientProcess::SetShapeFixParameters(ParameterMap&& theParameters)
+{
+  myShapeProcParams = std::move(theParameters);
+}
+
+//=============================================================================
+
+void Transfer_ActorOfTransientProcess::SetShapeFixParameters(
+  const DE_ShapeFixParameters& theParameters,
+  const ParameterMap&          theAdditionalParameters)
+{
+  myShapeProcParams.clear();
+  XSAlgo_ShapeProcessor::FillParameterMap(theParameters, true, myShapeProcParams);
+  for (const auto& aParam : theAdditionalParameters)
+  {
+    if (myShapeProcParams.find(aParam.first) == myShapeProcParams.end())
+    {
+      myShapeProcParams[aParam.first] = aParam.second;
+    }
+  }
+}
+
+//=============================================================================
+
+void Transfer_ActorOfTransientProcess::SetProcessingFlags(
+  const ShapeProcess::OperationsFlags& theFlags)
+{
+  myShapeProcFlags.first  = theFlags;
+  myShapeProcFlags.second = true;
 }
